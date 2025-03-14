@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv  # Import dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +50,10 @@ async def on_message(message: Message):
 async def setup(dp: Dispatcher):
     dp.message.register(on_message)  # Correct way to register handlers in aiogram 3.x
 
+# Function to start polling for a bot
+async def start_polling_for_bot(bot: Bot, dp: Dispatcher):
+    await dp.start_polling(bot)
+
 async def main():
     """Main function to start all bots."""
     logger.info("🚀 Starting all bots...")
@@ -57,8 +62,11 @@ async def main():
     for dp in dispatchers:
         await setup(dp)
 
-    # Run bots concurrently
-    await asyncio.gather(*(dp.start_polling(bot) for dp, bot in zip(dispatchers, bots)))
+    # Use ThreadPoolExecutor to run polling in parallel for each bot
+    with ThreadPoolExecutor() as executor:
+        # Run each bot's polling in its own thread
+        for bot, dp in zip(bots, dispatchers):
+            executor.submit(asyncio.run, start_polling_for_bot(bot, dp))
 
     # Properly close bot sessions after execution
     for bot in bots:
