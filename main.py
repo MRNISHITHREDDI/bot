@@ -47,7 +47,7 @@ async def on_message(message: Message):
 
 # Function to set up the dispatcher for each bot
 async def setup(dp: Dispatcher):
-    dp.register_message_handler(on_message)
+    dp.message.register(on_message)  # Correct way to register handlers in aiogram 3.x
 
 async def main():
     """Main function to start all bots."""
